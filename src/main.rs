@@ -73,7 +73,8 @@ impl Handler {
                 ]
             });
 
-            let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", api_key);
+            // ここを現在の最新モデル "gemini-2.5-flash" に変更
+            let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={}", api_key);
 
             let res = self.state.http_client
                 .post(&url)
