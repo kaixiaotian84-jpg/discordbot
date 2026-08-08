@@ -49,7 +49,7 @@ impl Handler {
         }
     }
 
-    async fn call_deepseek_api(&self, prompt: &str) -> Result<String, String> {
+    async fn call_gemini_api(&self, prompt: &str) -> Result<String, String> {
         let max_retries = {
             let guard = self.state.api_manager.lock().await;
             guard.keys.len()
@@ -62,23 +62,21 @@ impl Handler {
             };
 
             let body = json!({
-                "model": "deepseek-chat",
-                "messages": [
+                "contents": [
                     {
-                        "role": "system",
-                        "content": "あなたは優秀なプログラミングアシスタントです。ユーザーの要望に基づき、複数のファイル構成とコードを考えてください。出力は、各ファイル名とコードをわかりやすく整理して返すか、プログラムがパースしやすい形式にしてください。"
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
+                        "parts": [
+                            {
+                                "text": format!("あなたは優秀なプログラミングアシスタントです。ユーザーの要望に基づき、複数のファイル構成とコードを考えてください。出力は、各ファイル名とコードをわかりやすく整理して返すか、プログラムがパースしやすい形式にしてください。\n\n要望: {}", prompt)
+                            }
+                        ]
                     }
-                ],
-                "stream": false
+                ]
             });
 
+            let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", api_key);
+
             let res = self.state.http_client
-                .post("https://api.deepseek.com/chat/completions")
-                .header("Authorization", format!("Bearer {}", api_key))
+                .post(&url)
                 .header("Content-Type", "application/json")
                 .json(&body)
                 .send()
@@ -101,7 +99,7 @@ impl Handler {
                     let json_res: serde_json::Value = response.json().await
                         .map_err(|e| format!("JSON Parse Error: {}", e))?;
                     
-                    let content = json_res["choices"][0]["message"]["content"]
+                    let content = json_res["candidates"][0]["content"]["parts"][0]["text"]
                         .as_str()
                         .ok_or("Invalid API response format")?
                         .to_string();
@@ -114,7 +112,7 @@ impl Handler {
             }
         }
 
-        Err("All DeepSeek API keys have reached their rate limits.".to_string())
+        Err("All Gemini API keys have reached their rate limits.".to_string())
     }
 }
 
@@ -152,7 +150,7 @@ impl EventHandler for Handler {
 
         let _ = msg.channel_id.say(&ctx.http, "Generating code and creating ZIP...").await;
 
-        match self.call_deepseek_api(&prompt).await {
+        match self.call_gemini_api(&prompt).await {
             Ok(ai_response) => {
                 let mut files = HashMap::new();
                 files.insert("generated_code.txt".to_string(), ai_response);
@@ -193,9 +191,9 @@ impl EventHandler for Handler {
 #[tokio::main]
 async fn main() {
     let api_keys = vec![
-        std::env::var("DEEPSEEK_API_KEY_1").expect("DEEPSEEK_API_KEY_1 is not set"),
-        std::env::var("DEEPSEEK_API_KEY_2").expect("DEEPSEEK_API_KEY_2 is not set"),
-        std::env::var("DEEPSEEK_API_KEY_3").expect("DEEPSEEK_API_KEY_3 is not set"),
+        std::env::var("GEMINI_API_KEY_1").expect("GEMINI_API_KEY_1 is not set"),
+        std::env::var("GEMINI_API_KEY_2").expect("GEMINI_API_KEY_2 is not set"),
+        std::env::var("GEMINI_API_KEY_3").expect("GEMINI_API_KEY_3 is not set"),
     ];
 
     let token = std::env::var("DISCORD_BOT_TOKEN").expect("DISCORD_BOT_TOKEN is not set");
