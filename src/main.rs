@@ -59,30 +59,27 @@ impl Handler {
         }
     }
 
-    async fn call_gemini_api(&self, prompt: &str) -> Result<String, String> {
+    async fn call_openai_api(&self, prompt: &str) -> Result<String, String> {
         let max_retries = {
             let guard = self.state.api_manager.lock().await;
             guard.len()
         };
         if max_retries == 0 {
-            return Err("Gemini API key が1つも設定されていません。".to_string());
+            return Err("OpenAI API key が1つも設定されていません。".to_string());
         }
+
         for attempt in 0..max_retries {
             let api_key = {
                 let guard = self.state.api_manager.lock().await;
                 match guard.get_current_key() {
                     Some(key) if !key.trim().is_empty() => key,
                     _ => {
-                        return Err("Gemini API key が空です。".to_string());
+                        return Err("OpenAI API key が空です。".to_string());
                     }
                 }
             };
 
-            // 利用可能なモデル名（必要に応じて変更してください）
-            let url = format!(
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}",
-                api_key
-            );
+            let url = "https://api.openai.com/v1/chat/completions";
 
             let system_prompt = r#"
 あなたは優秀なプログラミングアシスタントです。
@@ -101,15 +98,16 @@ impl Handler {
 * ファイル名を明確にしてください。
 "#;
 
-            let full_prompt = format!("{}\n\nユーザーの要望:\n{}", system_prompt, prompt);
             let body = json!({
-                "contents": [
+                "model": "gpt-4o",
+                "messages": [
                     {
-                        "parts": [
-                            {
-                                "text": full_prompt
-                            }
-                        ]
+                        "role": "system",
+                        "content": system_prompt
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
                     }
                 ]
             });
@@ -117,8 +115,9 @@ impl Handler {
             let response = self
                 .state
                 .http_client
-                .post(&url)
+                .post(url)
                 .header("Content-Type", "application/json")
+                .header("Authorization", format!("Bearer {}", api_key))
                 .json(&body)
                 .send()
                 .await;
@@ -144,12 +143,10 @@ impl Handler {
                     })?;
 
                     let content = json_response
-                        .get("candidates")
+                        .get("choices")
                         .and_then(|c| c.get(0))
-                        .and_then(|c| c.get("content"))
-                        .and_then(|c| c.get("parts"))
-                        .and_then(|p| p.get(0))
-                        .and_then(|p| p.get("text"))
+                        .and_then(|c| c.get("message"))
+                        .and_then(|m| m.get("content"))
                         .and_then(|t| t.as_str());
 
                     match content {
@@ -158,7 +155,7 @@ impl Handler {
                         }
                         _ => {
                             return Err(format!(
-                                "Invalid Gemini API response format: {}",
+                                "Invalid OpenAI API response format: {}",
                                 json_response
                             ));
                         }
@@ -169,7 +166,7 @@ impl Handler {
                 }
             }
         }
-        Err("All Gemini API keys have reached their rate limits.".to_string())
+        Err("All OpenAI API keys have reached their rate limits.".to_string())
     }
 }
 
@@ -205,9 +202,9 @@ impl EventHandler for Handler {
             return;
         }
 
-        let _ = msg.channel_id.say(&ctx.http, "on it... cooking up the project rn").await;
+        let _ = msg.channel_id.say(&ctx.http, "on it... cooking up the project rn (GPT-4o)").await;
 
-        match self.call_gemini_api(&prompt).await {
+        match self.call_openai_api(&prompt).await {
             Ok(ai_response) => {
                 let mut files = HashMap::new();
                 files.insert("generated_code.txt".to_string(), ai_response);
@@ -252,7 +249,7 @@ impl EventHandler for Handler {
 #[tokio::main]
 async fn main() {
     let mut api_keys = Vec::new();
-    for variable_name in ["GEMINI_API_KEY_1", "GEMINI_API_KEY_2", "GEMINI_API_KEY_3"] {
+    for variable_name in ["OPENAI_API_KEY_1", "OPENAI_API_KEY_2", "OPENAI_API_KEY_3", "OPENAI_API_KEY"] {
         if let Ok(value) = std::env::var(variable_name) {
             if !value.trim().is_empty() {
                 api_keys.push(value);
@@ -261,7 +258,7 @@ async fn main() {
     }
 
     if api_keys.is_empty() {
-        eprintln!("ERROR: No Gemini API keys are configured.");
+        eprintln!("ERROR: No OpenAI API keys are configured.");
         return;
     }
 
