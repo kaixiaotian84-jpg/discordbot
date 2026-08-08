@@ -73,7 +73,7 @@ impl Handler {
                 ]
             });
 
-            let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={}", api_key);
+            let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", api_key);
 
             let res = self.state.http_client
                 .post(&url)
@@ -148,7 +148,7 @@ impl EventHandler for Handler {
             return;
         }
 
-        let _ = msg.channel_id.say(&ctx.http, "on it... cooking up the zip for u rn 👨‍💻").await;
+        let _ = msg.channel_id.say(&ctx.http, "on it... cooking up the zip for u rn").await;
 
         match self.call_gemini_api(&prompt).await {
             Ok(ai_response) => {
@@ -179,7 +179,7 @@ impl EventHandler for Handler {
                 }
 
                 let attachment = CreateAttachment::bytes(zip_data, "project.zip");
-                let _ = msg.channel_id.send_files(&ctx.http, vec![attachment], serenity::builder::CreateMessage::new().content("here u go g, lmk if it works 🚀")).await;
+                let _ = msg.channel_id.send_files(&ctx.http, vec![attachment], serenity::builder::CreateMessage::new().content("here u go g, lmk if it works")).await;
             }
             Err(e) => {
                 let _ = msg.channel_id.say(&ctx.http, format!("nah an error happened: {}", e)).await;
