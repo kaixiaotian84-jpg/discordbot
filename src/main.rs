@@ -144,11 +144,11 @@ impl EventHandler for Handler {
             .to_string();
 
         if prompt.is_empty() {
-            let _ = msg.channel_id.say(&ctx.http, "Please provide a prompt.").await;
+            let _ = msg.channel_id.say(&ctx.http, "yo, where's the prompt? lol").await;
             return;
         }
 
-        let _ = msg.channel_id.say(&ctx.http, "Generating code and creating ZIP...").await;
+        let _ = msg.channel_id.say(&ctx.http, "on it... cooking up the zip for u rn 👨‍💻").await;
 
         match self.call_gemini_api(&prompt).await {
             Ok(ai_response) => {
@@ -164,25 +164,25 @@ impl EventHandler for Handler {
 
                     for (filename, content) in &files {
                         if let Err(e) = zip_writer.start_file(filename, options) {
-                            let _ = msg.channel_id.say(&ctx.http, format!("ZIP Error: {}", e)).await;
+                            let _ = msg.channel_id.say(&ctx.http, format!("damn zip error: {}", e)).await;
                             return;
                         }
                         if let Err(e) = zip_writer.write_all(content.as_bytes()) {
-                            let _ = msg.channel_id.say(&ctx.http, format!("ZIP Write Error: {}", e)).await;
+                            let _ = msg.channel_id.say(&ctx.http, format!("rip write failed: {}", e)).await;
                             return;
                         }
                     }
                     if let Err(e) = zip_writer.finish() {
-                        let _ = msg.channel_id.say(&ctx.http, format!("ZIP Finish Error: {}", e)).await;
+                        let _ = msg.channel_id.say(&ctx.http, format!("zip finish broke: {}", e)).await;
                         return;
                     }
                 }
 
                 let attachment = CreateAttachment::bytes(zip_data, "project.zip");
-                let _ = msg.channel_id.send_files(&ctx.http, vec![attachment], serenity::builder::CreateMessage::new().content("Complete!")).await;
+                let _ = msg.channel_id.send_files(&ctx.http, vec![attachment], serenity::builder::CreateMessage::new().content("here u go g, lmk if it works 🚀")).await;
             }
             Err(e) => {
-                let _ = msg.channel_id.say(&ctx.http, format!("Error: {}", e)).await;
+                let _ = msg.channel_id.say(&ctx.http, format!("nah an error happened: {}", e)).await;
             }
         }
     }
