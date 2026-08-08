@@ -129,14 +129,19 @@ impl EventHandler for Handler {
             return;
         }
 
-        let is_mentioned = msg.mentions_user(&ctx.cache.current_user());
+        let current_user = match ctx.http.get_current_user().await {
+            Ok(user) => user,
+            Err(_) => return,
+        };
+
+        let is_mentioned = msg.mentions_user(&current_user);
         if !is_mentioned {
             return;
         }
 
         let prompt = msg.content
-            .replace(&format!("<@!{}>", ctx.cache.current_user().id), "")
-            .replace(&format!("<@{}>", ctx.cache.current_user().id), "")
+            .replace(&format!("<@!{}>", current_user.id), "")
+            .replace(&format!("<@{}>", current_user.id), "")
             .trim()
             .to_string();
 
