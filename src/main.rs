@@ -184,16 +184,14 @@ impl EventHandler for Handler {
         }
     }
 }
-
 #[tokio::main]
 async fn main() {
     let api_keys = vec![
-        std::env::var("DEEPSEEK_API_KEY_1").expect("DEEPSEEK_API_KEY_1 is not set"),
-        std::env::var("DEEPSEEK_API_KEY_2").expect("DEEPSEEK_API_KEY_2 is not set"),
-        std::env::var("DEEPSEEK_API_KEY_3").expect("DEEPSEEK_API_KEY_3 is not set"),
+        "sk-99836edc963b4d15b3687c660abd6ba9".to_string(),
     ];
 
-    let token = std::env::var("DISCORD_BOT_TOKEN").expect("DISCORD_BOT_TOKEN is not set");
+    let token = "MTUzNTY2NDQyNDY2NzU4NjY2MA.G9BXnt.DfPzoNuvCdmu2X50tlT32pXlIMwKKzgdBfs4tI".to_string();
+    
     let intents = GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::DIRECT_MESSAGES
         | GatewayIntents::MESSAGE_CONTENT;
