@@ -65,16 +65,16 @@ impl Handler {
             guard.len()
         };
         if max_retries == 0 {
-            return Err("OpenAI API key が1つも設定されていません。".to_string());
+            return Err("mb, no api keys found... check env bro".to_string());
         }
 
-        for attempt in 0..max_retries {
+        for _ in 0..max_retries {
             let api_key = {
                 let guard = self.state.api_manager.lock().await;
                 match guard.get_current_key() {
                     Some(key) if !key.trim().is_empty() => key,
                     _ => {
-                        return Err("OpenAI API key が空です。".to_string());
+                        return Err("key is empty wtf".to_string());
                     }
                 }
             };
@@ -133,13 +133,13 @@ impl Handler {
 
                     if !status.is_success() {
                         let error_text = response.text().await.unwrap_or_else(|_| {
-                            "Unknown API error".to_string()
+                            "unknown error".to_string()
                         });
-                        return Err(format!("API Error (Status {}): {}", status, error_text));
+                        return Err(format!("api went boom ({}): {}", status, error_text));
                     }
 
                     let json_response: serde_json::Value = response.json().await.map_err(|e| {
-                        format!("JSON Parse Error: {}", e)
+                        format!("json parse failed: {}", e)
                     })?;
 
                     let content = json_response
@@ -154,26 +154,23 @@ impl Handler {
                             return Ok(text.to_string());
                         }
                         _ => {
-                            return Err(format!(
-                                "Invalid OpenAI API response format: {}",
-                                json_response
-                            ));
+                            return Err("got empty response from api rip".to_string());
                         }
                     }
                 }
                 Err(error) => {
-                    return Err(format!("Network Request Error: {}", error));
+                    return Err(format!("net error: {}", error));
                 }
             }
         }
-        Err("All OpenAI API keys have reached their rate limits.".to_string())
+        Err("all api keys are dead / rate limited rn ngl".to_string())
     }
 }
 
 #[async_trait]
 impl EventHandler for Handler {
     async fn ready(&self, _: Context, ready: Ready) {
-        println!("Discord Bot is online! Logged in as: {}", ready.user.name);
+        println!("bot online as {}", ready.user.name);
     }
 
     async fn message(&self, ctx: Context, msg: Message) {
@@ -198,11 +195,11 @@ impl EventHandler for Handler {
             .to_string();
 
         if prompt.is_empty() {
-            let _ = msg.channel_id.say(&ctx.http, "yo, where's the prompt? lol").await;
+            let _ = msg.channel_id.say(&ctx.http, "bro u forgot the prompt lol").await;
             return;
         }
 
-        let _ = msg.channel_id.say(&ctx.http, "on it... cooking up the project rn (GPT-4o)").await;
+        let _ = msg.channel_id.say(&ctx.http, "on it, cooking up the code rn... 🍳").await;
 
         match self.call_openai_api(&prompt).await {
             Ok(ai_response) => {
@@ -218,29 +215,29 @@ impl EventHandler for Handler {
 
                     for (filename, content) in &files {
                         if let Err(error) = zip_writer.start_file(filename, options) {
-                            let _ = msg.channel_id.say(&ctx.http, format!("damn zip error: {}", error)).await;
+                            let _ = msg.channel_id.say(&ctx.http, format!("zip error: {}", error)).await;
                             return;
                         }
                         if let Err(error) = zip_writer.write_all(content.as_bytes()) {
-                            let _ = msg.channel_id.say(&ctx.http, format!("rip write failed: {}", error)).await;
+                            let _ = msg.channel_id.say(&ctx.http, format!("write failed: {}", error)).await;
                             return;
                         }
                     }
                     if let Err(error) = zip_writer.finish() {
-                        let _ = msg.channel_id.say(&ctx.http, format!("zip finish broke: {}", error)).await;
+                        let _ = msg.channel_id.say(&ctx.http, format!("zip finish failed: {}", error)).await;
                         return;
                     }
                 }
 
                 let attachment = CreateAttachment::bytes(zip_data, "project.zip");
                 let message = CreateMessage::new()
-                    .content("here u go g, lmk if it works")
+                    .content("here u go g, check the zip 🤝")
                     .add_file(attachment);
 
                 let _ = msg.channel_id.send_message(&ctx.http, message).await;
             }
             Err(error) => {
-                let _ = msg.channel_id.say(&ctx.http, format!("nah an error happened:\n{}", error)).await;
+                let _ = msg.channel_id.say(&ctx.http, format!("nah an error happened:\n`{}`", error)).await;
             }
         }
     }
@@ -258,14 +255,14 @@ async fn main() {
     }
 
     if api_keys.is_empty() {
-        eprintln!("ERROR: No OpenAI API keys are configured.");
+        eprintln!("err: no openai api keys configured");
         return;
     }
 
     let token = match std::env::var("DISCORD_BOT_TOKEN") {
         Ok(value) if !value.trim().is_empty() => value,
         _ => {
-            eprintln!("ERROR: DISCORD_BOT_TOKEN is not set.");
+            eprintln!("err: discord bot token missing");
             return;
         }
     };
@@ -278,9 +275,9 @@ async fn main() {
     let mut client = Client::builder(&token, intents)
         .event_handler(handler)
         .await
-        .expect("Failed to create client");
+        .expect("client creation failed");
 
     if let Err(error) = client.start().await {
-        eprintln!("Discord client error: {:?}", error);
+        eprintln!("client error: {:?}", error);
     }
 }
