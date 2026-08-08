@@ -190,7 +190,7 @@ async fn main() {
         "sk-99836edc963b4d15b3687c660abd6ba9".to_string(),
     ];
 
-    let token = "MTUzNTY2NDQyNDY2NzU4NjY2MA.G9BXnt.DfPzoNuvCdmu2X50tlT32pXlIMwKKzgdBfs4tI".to_string();
+    let token = "MTUzNTY2NDQyNDY2NzU4NjY2MA.GDUCka.B0_jD1xs6qczJ6WFzyh5-Yfz-LNu-z1DunyQz8".to_string();
     
     let intents = GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::DIRECT_MESSAGES
