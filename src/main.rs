@@ -66,7 +66,7 @@ impl Handler {
                 "messages": [
                     {
                         "role": "system",
-                        "content": "あなたは優秀なプログラミングアシスタントです。ユーザーの要望に基づき、複数のファイル構成とコードを考えてください。出力は、各ファイル名とコードをわかりやすく整理して返すか、プログラムがパースしやすい形式にしてください。コード内には//コメント等を含めずにかつ、確実に.zipファイルで生成してください。"
+                        "content": "あなたは優秀なプログラミングアシスタントです。ユーザーの要望に基づき、複数のファイル構成とコードを考えてください。出力は、各ファイル名とコードをわかりやすく整理して返すか、プログラムがパースしやすい形式にしてください。"
                     },
                     {
                         "role": "user",
@@ -184,14 +184,16 @@ impl EventHandler for Handler {
         }
     }
 }
+
 #[tokio::main]
 async fn main() {
     let api_keys = vec![
-        "sk-99836edc963b4d15b3687c660abd6ba9".to_string(),
+        std::env::var("DEEPSEEK_API_KEY_1").expect("DEEPSEEK_API_KEY_1 is not set"),
+        std::env::var("DEEPSEEK_API_KEY_2").expect("DEEPSEEK_API_KEY_2 is not set"),
+        std::env::var("DEEPSEEK_API_KEY_3").expect("DEEPSEEK_API_KEY_3 is not set"),
     ];
 
-    let token = "MTUzNTY2NDQyNDY2NzU4NjY2MA.GDUCka.B0_jD1xs6qczJ6WFzyh5-Yfz-LNu-z1DunyQz8".to_string();
-    
+    let token = std::env::var("DISCORD_BOT_TOKEN").expect("DISCORD_BOT_TOKEN is not set");
     let intents = GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::DIRECT_MESSAGES
         | GatewayIntents::MESSAGE_CONTENT;
